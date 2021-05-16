@@ -35,10 +35,12 @@ def get_movie_director():
                 i = i[1:]
             if i.endswith('(co-director)'):
                 i = i.replace('(co-director)', '')
-                _id = hashlib.sha1((row[0]+str(directors[i])+'co-director').encode()).hexdigest()
+                _id = hashlib.sha1(
+                    (row[0]+str(directors[i])+'co-director').encode()).hexdigest()
                 li.append((_id, row[0], directors[i], 'co-director'))
             else:
-                _id = hashlib.sha1((row[0]+str(directors[i])).encode()).hexdigest()
+                _id = hashlib.sha1(
+                    (row[0]+str(directors[i])).encode()).hexdigest()
                 li.append((_id, row[0], directors[i], None))
     return li
 
@@ -69,29 +71,26 @@ def get_movie_genre():
 
 def get_movie_writers():
     li = []
-    lo = []
-    ld = []
-    dirrr = {}
-    for row in cur.execute("SELECT id, writer FROM movies WHERE writer is not '' AND writer is not null ORDER BY id"):
-        li.append(row)
-    for row in cur.execute("SELECT id, writers FROM movies WHERE writers is not '' AND writers is not null ORDER BY id"):
-        lo.append(row)
-    for i in li:
-        sql = f"SELECT id, name FROM writers WHERE writer_id='{i[1]}'"
-        for row in cur.execute(sql):
-            _id = hashlib.sha1((i[0]+str(row[0])).encode()).hexdigest()
-            dirrr[_id] = (i[0], row[0])
+    _dict = {}
+    for w in ['writer', 'writers']:
+        for row in cur.execute(f"SELECT id, {w} FROM movies WHERE writer is not '' AND writer is not null ORDER BY id"):
+            li.append(row)
     pattern = re.compile('[0-9a-z]{40}')
-    for i in lo:
-        for j in i[1:]:
-            for k in re.findall(pattern, j):
-                sql = f"SELECT id, name FROM writers WHERE writer_id='{k}'"
-                for row in cur.execute(sql):
-                    _id = hashlib.sha1((i[0]+str(row[0])).encode()).hexdigest()
-                    dirrr[_id] = (i[0], row[0])
-    for _id, val in dirrr.items():
-        ld.append((_id, val[0], val[1]))
-    return ld
+    for i in li:
+        if type(i[1]) == list:
+            for j in i[1:]:
+                for k in re.findall(pattern, j):
+                    sql = f"SELECT id, name FROM writers WHERE writer_id='{k}'"
+                    for row in cur.execute(sql):
+                        _id = hashlib.sha1(
+                            (i[0]+str(row[0])).encode()).hexdigest()
+                        _dict[_id] = (i[0], row[0])
+        else:
+            sql = f"SELECT id, name FROM writers WHERE writer_id='{i[1]}'"
+            for row in cur.execute(sql):
+                _id = hashlib.sha1((i[0]+str(row[0])).encode()).hexdigest()
+                _dict[_id] = (i[0], row[0])
+    return [(k, v[0], v[1]) for k, v in _dict.items()]
 
 
 def remove_na():

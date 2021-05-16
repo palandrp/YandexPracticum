@@ -14,22 +14,22 @@ name text
 );
 
 CREATE TABLE movie_actors(
-id integer primary key autoincrement,
+id text primary key,
 movie_id text,
-actor_id text
+actor_id integer
 );
 
 CREATE TABLE movie_directors(
-id integer primary key autoincrement,
+id text primary key,
 movie_id text,
-director_id text,
+director_id integer,
 co_director text
 );
 
 CREATE TABLE movie_writers(
-id integer primary key autoincrement,
+id text primary key,
 movie_id text,
-writer_id text
+writer_id integer
 );
 
 CREATE TABLE movies (
@@ -37,7 +37,7 @@ id text primary key,
 title text,
 plot text,
 ratings text,
-imdb_rating text
+imdb_rating float
 );
 
 CREATE TABLE movie_genres(
@@ -71,6 +71,6 @@ Western text
 );
 
 CREATE TABLE rating_agency(
-id text(27) primary key,
+id text primary key,
 name text
 );

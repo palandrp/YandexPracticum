@@ -1,5 +1,6 @@
 import sqlite3
 import re
+import hashlib
 
 from sqlite3 import IntegrityError
 
@@ -34,9 +35,11 @@ def get_movie_director():
                 i = i[1:]
             if i.endswith('(co-director)'):
                 i = i.replace('(co-director)', '')
-                li.append((row[0], directors[i], 'co-director'))
+                _id = hashlib.sha1((row[0]+str(directors[i])+'co-director').encode()).hexdigest()
+                li.append((_id, row[0], directors[i], 'co-director'))
             else:
-                li.append((row[0], directors[i], None))
+                _id = hashlib.sha1((row[0]+str(directors[i])).encode()).hexdigest()
+                li.append((_id, row[0], directors[i], None))
     return li
 
 
@@ -67,8 +70,8 @@ def get_movie_genre():
 def get_movie_writers():
     li = []
     lo = []
-    li2 = []
-    lo2 = []
+    ld = []
+    dirrr = {}
     for row in cur.execute("SELECT id, writer FROM movies WHERE writer is not '' AND writer is not null ORDER BY id"):
         li.append(row)
     for row in cur.execute("SELECT id, writers FROM movies WHERE writers is not '' AND writers is not null ORDER BY id"):
@@ -76,15 +79,19 @@ def get_movie_writers():
     for i in li:
         sql = f"SELECT id, name FROM writers WHERE writer_id='{i[1]}'"
         for row in cur.execute(sql):
-            li2.append((i[0], row[0]))
+            _id = hashlib.sha1((i[0]+str(row[0])).encode()).hexdigest()
+            dirrr[_id] = (i[0], row[0])
     pattern = re.compile('[0-9a-z]{40}')
     for i in lo:
         for j in i[1:]:
             for k in re.findall(pattern, j):
                 sql = f"SELECT id, name FROM writers WHERE writer_id='{k}'"
                 for row in cur.execute(sql):
-                    lo2.append((i[0], row[0]))
-    return li2 + lo2
+                    _id = hashlib.sha1((i[0]+str(row[0])).encode()).hexdigest()
+                    dirrr[_id] = (i[0], row[0])
+    for _id, val in dirrr.items():
+        ld.append((_id, val[0], val[1]))
+    return ld
 
 
 def remove_na():
@@ -101,21 +108,25 @@ def remove_na():
 
 def recreate_movie_actors_t():
     mov_act = []
+    mov_act_d = {}
     print("Выбираем таблицу movie_actors")
     for row in cur.execute("SELECT * FROM movie_actors"):
-        mov_act.append((row[0], int(row[1])))
+        _id = hashlib.sha1((row[0]+row[1]).encode()).hexdigest()
+        mov_act_d[_id] = (row[0], int(row[1]))
+    for _id, val in mov_act_d.items():
+        mov_act.append((_id, val[0], val[1]))
     print("Дропаем старую таблицу movie_actors")
     cur.execute("DROP TABLE movie_actors")
     print("Создаем новую таблицу с автоинкрементом и новым типом поля actor_id")
     print("Преобразуем тип actor_id в integer, для соответствия FK")
     cur.execute("""
         CREATE TABLE movie_actors(
-        id integer primary key autoincrement,
+        id text primary key,
         movie_id text,
         actor_id int
         )""")
     print("Пушим данные в таблицу movie_actors")
-    insert_sql = "INSERT INTO movie_actors (movie_id, actor_id) values (?, ?)"
+    insert_sql = "INSERT INTO movie_actors (id, movie_id, actor_id) values (?, ?, ?)"
     insert_multiple_records(insert_sql, mov_act)
 
 
@@ -137,15 +148,15 @@ def create_movie_directors_t():
     print("Создаем таблицу movie_directors")
     cur.execute("""
         CREATE TABLE movie_directors(
-        id integer primary key autoincrement,
+        id text primary key,
         movie_id text,
-        director_id text,
+        director_id integer,
         co_director text
         )""")
     print("Парсим режисеров из таблицы movies")
     mov_dir = get_movie_director()
     print("Пушим режисеров в новую таблицу movie_directors")
-    insert_sql = "INSERT INTO movie_directors (movie_id, director_id, co_director) values (?, ?, ?)"
+    insert_sql = "INSERT INTO movie_directors (id, movie_id, director_id, co_director) values (?, ?, ?, ?)"
     insert_multiple_records(insert_sql, mov_dir)
 
 
@@ -172,14 +183,14 @@ def create_movie_writers_t():
     print("Создаем таблицу movie_writers")
     cur.execute("""
         CREATE TABLE movie_writers(
-        id integer primary key autoincrement,
+        id text primary key,
         movie_id text,
-        writer_id text
+        writer_id integer
         )""")
     print("Парсим сценаристов из таблицы movies")
     mov_writ = get_movie_writers()
     print("Пушим сценаристов в новую таблицу movie_writers")
-    insert_sql = "INSERT INTO movie_writers (movie_id, writer_id) values (?, ?)"
+    insert_sql = "INSERT INTO movie_writers (id, movie_id, writer_id) values (?, ?, ?)"
     insert_multiple_records(insert_sql, mov_writ)
 
 
@@ -256,7 +267,7 @@ def recreate_rating_agency_t():
     print("Создаем таблицу rating_agency с использованием primary key")
     cur.execute("""
         CREATE TABLE rating_agency(
-        id text(27) primary key,
+        id text primary key,
         name text
         )""")
 
@@ -276,7 +287,11 @@ def drop_columns():
     insert_multiple_records(insert_sql, li)
     li = []
     for row in cur.execute("SELECT * FROM movies"):
-        li.append((row[0], row[4], row[5], row[6], row[7]))
+        try:
+            imdb = float(row[7])
+        except ValueError:
+            imdb = None
+        li.append((row[0], row[4], row[5], row[6], imdb))
     cur.execute("DROP TABLE movies")
     cur.execute("""
         CREATE TABLE movies (
@@ -284,7 +299,7 @@ def drop_columns():
         title text,
         plot text,
         ratings text,
-        imdb_rating text
+        imdb_rating float
         )""")
     insert_sql = "INSERT INTO movies (id, title, plot, ratings, imdb_rating) values (?, ?, ?, ?, ?)"
     insert_multiple_records(insert_sql, li)

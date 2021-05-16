@@ -34,7 +34,7 @@ def get_movie_director():
                 i = i[1:]
             if i.endswith('(co-director)'):
                 i = i.replace('(co-director)', '')
-                li.append((row[0], directors[i], 1))
+                li.append((row[0], directors[i], 'co-director'))
             else:
                 li.append((row[0], directors[i], None))
     return li
@@ -57,7 +57,7 @@ def get_movie_genre():
         g = row[1].replace(' ', '').split(',')
         for i in genres:
             if i in g:
-                li.append(1)
+                li.append(i)
             else:
                 li.append(None)
         genre_movie.append(tuple(li))
@@ -140,7 +140,7 @@ def create_movie_directors_t():
         id integer primary key autoincrement,
         movie_id text,
         director_id text,
-        co_director tinyint
+        co_director text
         )""")
     print("Парсим режисеров из таблицы movies")
     mov_dir = get_movie_director()
@@ -188,32 +188,32 @@ def create_movie_genres_t():
     cur.execute("""
         CREATE TABLE movie_genres(
         movie_id text primary key,
-        Action tinyint,
-        Adventure tinyint,
-        Animation tinyint,
-        Biography tinyint,
-        Comedy tinyint,
-        Crime tinyint,
-        Documentary tinyint,
-        Drama tinyint,
-        Family tinyint,
-        Fantasy tinyint,
-        GameShow tinyint,
-        History tinyint,
-        Horror tinyint,
-        Music tinyint,
-        Musical tinyint,
-        Mystery tinyint,
-        News tinyint,
-        RealityTV tinyint,
-        Romance tinyint,
-        SciFi tinyint,
-        Short tinyint,
-        Sport tinyint,
-        TalkShow tinyint,
-        Thriller tinyint,
-        War tinyint,
-        Western tinyint
+        Action text,
+        Adventure text,
+        Animation text,
+        Biography text,
+        Comedy text,
+        Crime text,
+        Documentary text,
+        Drama text,
+        Family text,
+        Fantasy text,
+        GameShow text,
+        History text,
+        Horror text,
+        Music text,
+        Musical text,
+        Mystery text,
+        News text,
+        RealityTV text,
+        Romance text,
+        SciFi text,
+        Short text,
+        Sport text,
+        TalkShow text,
+        Thriller text,
+        War text,
+        Western text
         )""")
     print("Парсим жанры из таблицы movies")
     movie_genres = get_movie_genre()

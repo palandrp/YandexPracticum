@@ -23,7 +23,7 @@ CREATE TABLE movie_directors(
 id integer primary key autoincrement,
 movie_id text,
 director_id text,
-co_director tinyint
+co_director text
 );
 
 CREATE TABLE movie_writers(
@@ -42,32 +42,32 @@ imdb_rating text
 
 CREATE TABLE movie_genres(
 movie_id text primary key,
-Action tinyint,
-Adventure tinyint,
-Animation tinyint,
-Biography tinyint,
-Comedy tinyint,
-Crime tinyint,
-Documentary tinyint,
-Drama tinyint,
-Family tinyint,
-Fantasy tinyint,
-GameShow tinyint,
-History tinyint,
-Horror tinyint,
-Music tinyint,
-Musical tinyint,
-Mystery tinyint,
-News tinyint,
-RealityTV tinyint,
-Romance tinyint,
-SciFi tinyint,
-Short tinyint,
-Sport tinyint,
-TalkShow tinyint,
-Thriller tinyint,
-War tinyint,
-Western tinyint
+Action text,
+Adventure text,
+Animation text,
+Biography text,
+Comedy text,
+Crime text,
+Documentary text,
+Drama text,
+Family text,
+Fantasy text,
+GameShow text,
+History text,
+Horror text,
+Music text,
+Musical text,
+Mystery text,
+News text,
+RealityTV text,
+Romance text,
+SciFi text,
+Short text,
+Sport text,
+TalkShow text,
+Thriller text,
+War text,
+Western text
 );
 
 CREATE TABLE rating_agency(

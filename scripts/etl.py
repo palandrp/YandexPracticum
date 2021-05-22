@@ -4,7 +4,7 @@ import requests
 
 from collections import deque
 
-from req_retr import http
+from request_retry import http
 
 
 def select(sql):
@@ -74,28 +74,16 @@ def select_movie_full(movie_id):
 def parse_data(data):
     movie_id = data['movie_desc'][0][2]
     imdb_r = data['movie_desc'][0][1]
-    genre = str([i for i in data['movie_desc'][0][3:29] if i is not None]) \
-        .replace('[', '') \
-        .replace("'", '') \
-        .replace(']', '')
+    genre = [i for i in data['movie_desc'][0][3:29] if i is not None]
     title = data['movie_desc'][0][0]
     desc = data['movie_desc'][0][-1]
-    director = str([[j for j in i if j is not None] for i in data['directors']]) \
-        .replace('[', '') \
-        .replace(']', '') \
-        .replace('(', '') \
-        .replace(')', '') \
-        .replace("'", '') \
-        .replace(', co-director', ' - co-director')
-    actors_names = str([i[1] for i in data['actors']]) \
-        .replace('[', '') \
-        .replace(']', '') \
-        .replace("'", '')
-    writers_names = str([i[1] for i in data['writers']]) \
-        .replace('[', '') \
-        .replace(']', '') \
-        .replace("'", '')
-    item = {
+    director = [[j for j in i if j is not None] for i in data['directors']]
+    actors_names = [i[1] for i in data['actors']]
+    writers_names = [i[1] for i in data['writers']]
+    f = lambda i: {'id': i[0], 'name': i[1]}
+    actors = [f(i) for i in data['actors']]
+    writers = [f(i) for i in data['writers']]
+    _dict = {
         "id": movie_id,
         "imdb_rating": imdb_r,
         "genre": genre,
@@ -103,9 +91,14 @@ def parse_data(data):
         "description": desc,
         "director": director,
         "actors_names": actors_names,
-        "writers_names": writers_names
+        "writers_names": writers_names,
+        "actors": actors,
+        "writers": writers
     }
-    return item
+    for k, v in _dict.items():
+        if type(v) == list and (len(v) == 0 or v == [[]]):
+            _dict[k] = None
+    return _dict
 
 
 def set_default(obj):
@@ -128,7 +121,7 @@ def bulk_elastic_request(data):
     headers = {'Content-type': 'application/x-ndjson'}
     elastic_url = 'http://127.0.0.1:9200/_bulk?filter_path=items.*.error'
     response = http.post(elastic_url, headers=headers, data=data)
-    return response.text
+    return response.text, response.status_code
 
 
 if __name__ == '__main__':
@@ -140,28 +133,22 @@ if __name__ == '__main__':
         bulk = 100
 
         movies_ids = [i[0] for i in select_movie_ids()]
-        actors = select_actors()
-        writers = select_writers()
 
-        _dict = {'actors': actors, 'writers': writers, 'movies': movies_ids}
-        for key, val in _dict.items():
-            q = deque(val)
-            while len(q) > 0:
-                f_data = None
-                for _ in range(bulk):
-                    try:
-                        if key == 'movies':
-                            _id = q.pop()
-                            item = parse_data(select_movie_full(_id))
-                        else:
-                            item = q.pop()
-                            _id = item[0]
-                            item = {'id': _id, 'name': item[1]}
-                        f_data = format_bulk_data(key, _id, item, f_data)
-                    except IndexError:
-                        break
-                r = bulk_elastic_request(f_data)
-                print(r)
+        q = deque(movies_ids)
+        while len(q) > 0:
+            f_data = None
+            for _ in range(bulk):
+                try:
+                    _id = q.pop()
+                    item = parse_data(select_movie_full(_id))
+                    f_data = format_bulk_data('movies', _id, item, f_data)
+                except IndexError:
+                    break
+            text, status = bulk_elastic_request(f_data)
+            if status != 200:
+                print(text)
+            else:
+                print(f"Loaded {bulk} records")
 
     except sqlite3.Error as error:
         print("Ошибка при работе с SQLite DB", error)

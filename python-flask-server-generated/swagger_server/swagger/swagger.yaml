@@ -7,18 +7,18 @@ servers:
 - url: http://localhost/api
 tags:
 - name: movies
-  description: Всё о фильмах
+  description: "Всё о фильмах"
 paths:
   /movies:
     get:
       tags:
       - movies
-      summary: Список фильмов
+      summary: "Список фильмов"
       operationId: list_movies
       parameters:
       - name: limit
         in: query
-        description: "количество объектов, которое надо вывести"
+        description: "Количество объектов, которое надо вывести"
         required: false
         style: form
         explode: true
@@ -27,7 +27,7 @@ paths:
           default: 50
       - name: page
         in: query
-        description: номер страницы
+        description: "Номер страницы"
         required: false
         style: form
         explode: true
@@ -36,7 +36,7 @@ paths:
           default: 1
       - name: sort
         in: query
-        description: "свойство, по которому нужно отсортировать результат"
+        description: "Свойство, по которому нужно отсортировать результат"
         required: false
         style: form
         explode: true
@@ -49,7 +49,7 @@ paths:
           - imdb_rating
       - name: sort_order
         in: query
-        description: порядок сортировки
+        description: "Порядок сортировки"
         required: false
         style: form
         explode: true
@@ -61,7 +61,7 @@ paths:
           - desc
       - name: search
         in: query
-        description: "неточный поиск по названию, описанию, актёрам, сценаристам и\
+        description: "Неточный поиск по названию, описанию, актёрам, сценаристам и\
           \ режиссёрам фильма\nПредставьте, что вы вбили в поиск Яндекса \"Звёздны\
           е войны\" или \"Джордж Лукас\" или \"Лукас войны\"  вам выводятся соотве\
           тствующие фильмы. "
@@ -72,6 +72,7 @@ paths:
           type: string
       responses:
         "200":
+          description: "Фильмы не найдены"
           content:
             application/json:
               schema:
@@ -80,9 +81,9 @@ paths:
                   $ref: '#/components/schemas/ShortMovie'
                 x-content-type: application/json
         "400":
-          description: неправильный формат тела запроса
+          description: "Неправильный формат тела запроса"
         "422":
-          description: неправильное тело запроса
+          description: "Неправильное тело запроса"
           content:
             application/json:
               schema:
@@ -92,8 +93,8 @@ paths:
     get:
       tags:
       - movies
-      summary: Получить фильм
-      description: Получить фильм
+      summary: "Получить фильм"
+      description: "Получить фильм"
       operationId: get_movie_by_id
       parameters:
       - name: movieID
@@ -105,12 +106,13 @@ paths:
           type: string
       responses:
         "200":
+          description: "Фильм найден"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Movie'
         "404":
-          description: Фильм не найден
+          description: "Фильм не найден"
           content: {}
       x-openapi-router-controller: swagger_server.controllers.movies_controller
 components:

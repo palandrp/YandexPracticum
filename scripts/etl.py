@@ -46,7 +46,7 @@ class ETL:
         self.es_loader = es_loader
         self.conn = conn
         self.cur = conn.cursor()
-        self.bulk = 100
+        self.bulk = 250
 
     def select_movie_ids(self):
         sql = """
@@ -105,7 +105,7 @@ class ETL:
             "genre": genre,
             "title": title,
             "description": desc,
-            "director": director,
+            "director": director[0],
             "actors_names": actors_names,
             "writers_names": writers_names,
             "actors": actors,
@@ -128,6 +128,7 @@ class ETL:
             q = deque(movies_ids)
             while len(q) > 0:
                 bulk_data = None
+                i = 0
                 for _ in range(self.bulk):
                     try:
                         _id = q.pop()
@@ -135,13 +136,14 @@ class ETL:
                             self.extract_movie_full(_id))
                         bulk_data = self.es_loader.format_bulk_data(
                             'movies', _id, movie_item, bulk_data)
+                        i += 1
                     except IndexError:
                         break
                 text, status = self.es_loader.load_to_es(bulk_data)
                 if status != 200:
                     print(text)
                 else:
-                    print(f"Loaded {self.bulk} records")
+                    print(f"Loaded {i} records")
         except sqlite3.Error as error:
             print("Ошибка при работе с SQLite DB", error)
         finally:

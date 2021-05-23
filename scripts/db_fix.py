@@ -87,14 +87,14 @@ def get_movie_writers():
         if i[1] != '' and i[1][0] == '[':
             for j in i[1:]:
                 for k in re.findall(pattern, j):
-                    sql = f"SELECT id, name FROM writers WHERE writer_id='{k}'"
+                    sql = f"SELECT id, name FROM writers WHERE id='{k}'"
                     for row in cur.execute(sql):
                         _id = hashlib.sha1(
                             (i[0]+str(row[0])).encode()).hexdigest()
                         _dict[_id] = (i[0], row[0])
         else:
             if i[1] != '':
-                sql = f"SELECT id, name FROM writers WHERE writer_id='{i[1]}'"
+                sql = f"SELECT id, name FROM writers WHERE id='{i[1]}'"
                 for row in cur.execute(sql):
                     _id = hashlib.sha1((i[0]+str(row[0])).encode()).hexdigest()
                     _dict[_id] = (i[0], row[0])
@@ -192,7 +192,7 @@ def create_movie_writers_t():
         CREATE TABLE movie_writers(
         id text primary key,
         movie_id text,
-        writer_id integer
+        writer_id text
         )""")
     print("Парсим сценаристов из таблицы movies")
     mov_writ = get_movie_writers()
@@ -281,17 +281,17 @@ def recreate_rating_agency_t():
 
 def drop_columns():
     print("Дропаем лишние столбцы в таблицах через пересоздание таблиц (т.к. SQLite)")
-    li = []
-    for row in cur.execute("SELECT * FROM writers"):
-        li.append((row[2],))
-    cur.execute("DROP TABLE writers")
-    cur.execute("""
-        CREATE TABLE writers(
-        id integer primary key autoincrement,
-        name text
-        )""")
-    insert_sql = "INSERT INTO writers (name) values (?)"
-    insert_multiple_records(insert_sql, li)
+    # li = []
+    # for row in cur.execute("SELECT * FROM writers"):
+    #     li.append((row[2],))
+    # cur.execute("DROP TABLE writers")
+    # cur.execute("""
+    #     CREATE TABLE writers(
+    #     id integer primary key autoincrement,
+    #     name text
+    #     )""")
+    # insert_sql = "INSERT INTO writers (name) values (?)"
+    # insert_multiple_records(insert_sql, li)
     li = []
     for row in cur.execute("SELECT * FROM movies"):
         try:
@@ -323,7 +323,7 @@ if __name__ == '__main__':
         recreate_movie_actors_t()
         create_directors_table()
         create_movie_directors_t()
-        recreate_writers_t()
+        # recreate_writers_t()
         create_movie_writers_t()
         create_movie_genres_t()
         recreate_rating_agency_t()

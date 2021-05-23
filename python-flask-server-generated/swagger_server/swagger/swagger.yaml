@@ -1,0 +1,236 @@
+openapi: 3.0.1
+info:
+  title: Spec
+  version: 1.0.0
+servers:
+- url: https://localhost/api
+- url: http://localhost/api
+tags:
+- name: movies
+  description: Всё о фильмах
+paths:
+  /movies:
+    get:
+      tags:
+      - movies
+      summary: Список фильмов
+      operationId: list_movies
+      parameters:
+      - name: limit
+        in: query
+        description: "количество объектов, которое надо вывести"
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 50
+      - name: page
+        in: query
+        description: номер страницы
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 1
+      - name: sort
+        in: query
+        description: "свойство, по которому нужно отсортировать результат"
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: id
+          enum:
+          - id
+          - title
+          - imdb_rating
+      - name: sort_order
+        in: query
+        description: порядок сортировки
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: asc
+          enum:
+          - asc
+          - desc
+      - name: search
+        in: query
+        description: "неточный поиск по названию, описанию, актёрам, сценаристам и\
+          \ режиссёрам фильма\nПредставьте, что вы вбили в поиск Яндекса \"Звёздны\
+          е войны\" или \"Джордж Лукас\" или \"Лукас войны\"  вам выводятся соотве\
+          тствующие фильмы. "
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShortMovie'
+                x-content-type: application/json
+        "400":
+          description: неправильный формат тела запроса
+        "422":
+          description: неправильное тело запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+      x-openapi-router-controller: swagger_server.controllers.movies_controller
+  /movies/{movieID}:
+    get:
+      tags:
+      - movies
+      summary: Получить фильм
+      description: Получить фильм
+      operationId: get_movie_by_id
+      parameters:
+      - name: movieID
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        "404":
+          description: Фильм не найден
+          content: {}
+      x-openapi-router-controller: swagger_server.controllers.movies_controller
+components:
+  schemas:
+    ShortMovie:
+      required:
+      - id
+      - title
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        imdb_rating:
+          type: number
+          format: float
+      example:
+        id: id
+        title: title
+        imdb_rating: 0.8008282
+    Writer:
+      required:
+      - id
+      - name
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      example:
+        name: name
+        id: id
+    Actor:
+      required:
+      - id
+      - name
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      example:
+        name: name
+        id: 6
+    Movie:
+      required:
+      - id
+      - title
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        imdb_rating:
+          type: number
+          format: float
+        writers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Writer'
+        actors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Actor'
+        genre:
+          type: array
+          items:
+            type: string
+        director:
+          type: array
+          items:
+            type: string
+      example:
+        actors:
+        - name: name
+          id: 6
+        - name: name
+          id: 6
+        director:
+        - director
+        - director
+        genre:
+        - genre
+        - genre
+        description: description
+        id: id
+        writers:
+        - name: name
+          id: id
+        - name: name
+          id: id
+        title: title
+        imdb_rating: 0.8008282
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError_detail'
+    ValidationError_detail:
+      type: object
+      properties:
+        loc:
+          type: array
+          example:
+          - query
+          - limit
+          items:
+            type: string
+        msg:
+          type: string
+          example: value is not a valid integer
+        type:
+          type: string
+          example: type_error.integer
+

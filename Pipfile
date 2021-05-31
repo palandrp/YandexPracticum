@@ -8,6 +8,9 @@ autopep8 = "*"
 
 [packages]
 requests = "*"
+flask = "*"
+wtforms = "*"
+psycopg2 = "*"
 
 [requires]
 python_version = "3.9"
